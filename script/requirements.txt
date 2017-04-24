@@ -1,0 +1,5 @@
+sqlalchemy
+PyMySQL
+flask
+passlib
+flask-socketio
