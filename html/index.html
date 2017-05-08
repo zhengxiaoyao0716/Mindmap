@@ -33,7 +33,7 @@
                 // 登录
                 .then(() => fetchJson('/user/user/search?keyword=18101301995')).then(d => JSON.stringify(d)).then(console.log)
                 // 项目
-                .then(() => 
+                .then(() =>
                     fetchJson(
                         '/user/project/create', { 'name': 'Test' }
                     ).then(d => d.body).then(project => {
@@ -46,7 +46,7 @@
                 )
                 // 长链接
                 .then(() => {
-                    const socket = io.connect('/Mindmap/socket/project', {'path': '/Mindmap/socket.io'});
+                    const socket = io.connect('/Mindmap/socket/project', { 'path': '/Mindmap/socket.io' });
                     socket.on('join', (data) => console.info(`${data.who.name}加入了项目`, data));
                     socket.on('send', (data) => console.info(`${data.sender.name}说：${data.content}`, data));
                     socket.on('leave', (data) => console.info(`${data.who.name}离开了项目`, data));

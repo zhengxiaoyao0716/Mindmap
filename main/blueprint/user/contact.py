@@ -27,7 +27,7 @@ def add_contact():
 def list_contact():
     """列出联系人"""
     return make_resp([{
-        'id': contact.account.id,
+        'id': contact.id,
         'account': contact.account.code,
         'name': contact.account.name,
     } for contact in g.user.contacts])
@@ -39,4 +39,4 @@ def delete_contact():
     db_session.execute(
         'DELETE FROM user_contact WHERE user_id = :user_id AND contact_id = :contact_id',
         {'user_id': g.user.id, 'contact_id': g.data['user_id']})
-    return 'fin'
+    return make_resp('fin')

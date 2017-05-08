@@ -22,16 +22,11 @@ def login_user():
         request.cookies.get('user'),
     )
     if err:
-        return make_resp(err)
+        return make_err(err)
     session['user'] = user.id
     token = user.account.create_token()
-    resp = make_response(make_resp({
-        'id': user.account.id,
-        'account': user.account.code,
-        'name': user.account.name,
-        'email': user.account.email,
-        'phone': user.account.phone,
-        'token': token,
-    }))
+    user_dict = user.simple()
+    user_dict['token'] = token
+    resp = make_response(make_resp(user_dict))
     resp.set_cookie('user', token)
     return resp

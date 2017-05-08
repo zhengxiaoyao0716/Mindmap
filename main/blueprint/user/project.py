@@ -61,7 +61,7 @@ def list_project():
     return make_resp([{
         'id': project.id,
         'owner': {
-            'id': project.owner.account.id,
+            'id': project.owner.id,
             'account': project.owner.account.code,
             'name': project.owner.account.name,
             # 'email': project.owner.account.email,

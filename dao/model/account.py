@@ -151,6 +151,16 @@ class User(Base):
         db_session.flush()
         return append_model_instance(cls, account.id)
 
+    def simple(self):
+        """字典化"""
+        return {
+            'id': self.id,
+            'account': self.account.code,
+            'name': self.account.name,
+            'email': self.account.email,
+            'phone': self.account.phone,
+        }
+
     def __init__(self, account_id):
         self.account_id = account_id
 
