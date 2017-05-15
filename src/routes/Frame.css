@@ -1,0 +1,25 @@
+.body {
+    height: 100%;
+}
+
+.body>.header {
+    display: flex;
+    align-items: flex-end;
+    background: #fff;
+}
+.body>.header>.header_logo {
+    color: #333;
+}
+.body>.header>.header_menu {
+    font-size: 1.5em;
+    padding: 0 20px;
+}
+.body>.header>.header_padding {
+    flex: 1 1 auto;
+}
+.body>.header>.header_radio {
+}
+
+.body>.content {
+    height: 100%;
+}
