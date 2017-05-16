@@ -16,10 +16,10 @@
   },
   "proxy": {
     "/Mindmap/": {
-      "target": "https://zheng0716.com/",
-      // "target": "http://localhost:5000/",
+      // "target": "https://zheng0716.com/Mindmap",
+      "target": "http://localhost:5000/Mindmap",
       "changeOrigin": true,
-      "pathRewrite": { "^/api" : "" }
+      "pathRewrite": { "^/Mindmap" : "" }
     }
   },
   "theme": "./theme.js"

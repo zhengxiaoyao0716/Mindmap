@@ -1,11 +1,38 @@
 import React from 'react';
 
 import {
-  Layout, Menu, Icon, Breadcrumb,
+  Layout, Menu, Icon, Breadcrumb, Spin, Modal,
 } from 'antd';
 const { Sider, Content } = Layout;
 
+import localStorage from './../utils/storage';
+import { SigninForm } from './../components/Sign';
+
+function checkLogin() {
+  if (this.props.account.baseInfo == null) {
+    if (localStorage.getItem('remember')) {
+      this.props.dispatch({ type: 'account/autoLogin' });
+      return {
+        loading: true,
+        spinning: '正在自动为您登录',
+      };
+    } else {
+      return {
+        loading: true,
+        loginDialog: true,
+      };
+    }
+  }
+  return {
+    loading: false,
+  };
+}
+
 class Page extends React.Component {
+  static contextTypes = {
+    router: React.PropTypes.object.isRequired,
+    // TODO use context
+  }
   constructor(props) {
     super(props);
 
@@ -13,15 +40,21 @@ class Page extends React.Component {
       const text = parenText + menu.text;
       return menu.children instanceof Array ? findFirst(menu.children[0], `${text}-`) : text;
     }
-    /* eslint-disable no-undef */
-    this.location = window.location;
-    /* eslint-enable no-undef */
+    this.location = window.location;  // eslint-disable-line no-undef
     this.state = {
       collapsed: false,
       mode: 'inline',
       select: this.location.hash ? this.location.hash.slice(1) : findFirst(this.props.menus[0], ''),
+      ...(checkLogin.call(this)),
     };
   }
+  componentWillReceiveProps() {
+    this.setState({
+      select: this.location.hash ? this.location.hash.slice(1) : this.state.select,
+      ...(checkLogin.call(this)),
+    });
+  }
+
   onCollapse = (collapsed) => {
     this.setState({
       collapsed,
@@ -51,15 +84,17 @@ class Page extends React.Component {
         );
       }
       this.contents[key] = children;
-      return children instanceof Function ?
-        <Menu.Item ref={(item) => {
-          if (item) {
-            /* eslint-disable no-param-reassign */
-            item.onClick = children;
-            /* eslint-enable no-param-reassign */
-          }
-        }} key={key}>{content}</Menu.Item>
-        : <Menu.Item key={key}>{content}</Menu.Item>;
+      return (<Menu.Item key={key} disabled={this.state.loading} {
+        ...(() => {
+          return children instanceof Function ? {
+            ref: (item) => {
+              if (item) {
+                item.onClick = children;  // eslint-disable-line no-param-reassign
+              }
+            },
+          } : {};
+        })()
+      } >{content}</Menu.Item>);
     });
   }
 
@@ -86,11 +121,18 @@ class Page extends React.Component {
             ))}
             <Breadcrumb.Item key="selectMenu">{this.state.select}</Breadcrumb.Item>
           </Breadcrumb>
-          {this.contents[this.state.select]}
+          <Spin spinning={this.state.loading} tip={this.state.spinning} delay={500} >
+            {this.contents[this.state.select]}
+          </Spin>
+          <Modal title="请先登录后再操作" visible={this.state.loginDialog} footer={null}
+            onCancel={() => this.context.router.replace('/')}>
+            <SigninForm onSubmit={() => this.setState({ loginDialog: false })} />
+          </Modal>
         </Content>
       </Layout>
     );
   }
 }
 
-export default Page;
+import { connect } from 'dva';
+export default connect(({ account }) => ({ account }))(Page);

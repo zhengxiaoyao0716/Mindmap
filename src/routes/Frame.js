@@ -1,28 +1,40 @@
 import React from 'react';
-
 import {
   Layout, Menu, Icon, Radio,
   LocaleProvider,
 } from 'antd';
 const { Header, Content } = Layout;
-import styles from './Frame.css';
-
 import enUS from 'antd/lib/locale-provider/en_US';
+
 import moment from 'moment';
 import 'moment/locale/zh-cn';
 
+import styles from './Frame.css';
+
 class Frame extends React.Component {
+  static contextTypes = {
+    router: React.PropTypes.object.isRequired,
+  }
+  static childContextTypes = {
+    dispatch: React.PropTypes.func.isRequired,
+  }
   constructor(props) {
     super(props);
 
     this.state = {
-      route: this.props.children.props.route.path,
+      route: this.props.children.props.route.path || '/',
       locale: null,
     };
   }
+  getChildContext() {
+    return { dispatch: this.props.dispatch };
+  }
 
+  componentWillReceiveProps({ children }) {
+    this.setState({ route: children.props.route.path || '/' });
+  }
   handleClick = (e) => {
-    this.setState({ route: e.key });
+    // this.setState({ route: e.key });
     this.context.router.replace(e.key);
   }
 
@@ -79,8 +91,5 @@ class Frame extends React.Component {
   }
 }
 
-Frame.contextTypes = {
-  router: React.PropTypes.object.isRequired,
-};
-
-export default Frame;
+import { connect } from 'dva';
+export default connect()(Frame);

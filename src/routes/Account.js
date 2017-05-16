@@ -3,6 +3,7 @@ import { Modal } from 'antd';
 
 import { logout } from './../services/user';
 import Page from './../components/Page';
+import localStorage from './../utils/storage';
 
 class Message extends React.Component {
   render() {
@@ -14,7 +15,7 @@ class Message extends React.Component {
   }
 }
 
-function Account(_, { router }) {
+function Account({ dispatch }, { router }) {
   return (
     <Page menus={[
       {
@@ -89,11 +90,11 @@ function Account(_, { router }) {
             content: '您确定要退出登录？',
             cancelText: '不，点错了',
             okText: '是的',
-            onOk: () => {
-              logout()
-                .catch(err => (err.err.response === 'UNAUTHORIZED' ? undefined : err))
-                .then(d => router.replace('/'));
-            },
+            onOk: () => logout().catch(() => { }).then(() => {
+              localStorage.removeItem('remember');
+              router.replace('/');
+              dispatch({ type: 'account/saveBaseInfo', payload: null });
+            }),
             iconType: null,
             maskClosable: true,
           });
@@ -107,4 +108,5 @@ Account.contextTypes = {
   router: React.PropTypes.object.isRequired,
 };
 
-export default Account;
+import { connect } from 'dva';
+export default connect(({ account }) => ({ account }))(Account);
