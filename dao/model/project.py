@@ -70,7 +70,7 @@ class Project(Base):
     @property
     def status(self):
         """项目状态"""
-        return [int(self._state)]
+        return self.STATUS_TEXTS[int(self._state)]
 
     @status.setter
     def status(self, status_text):
