@@ -1,4 +1,5 @@
 import { login } from './../services/user';
+import localStorage from './../utils/storage';
 
 export default {
   namespace: 'account',
@@ -13,9 +14,15 @@ export default {
   },
 
   effects: {
-    *autoLogin({ payload }, { call, put }) {  // eslint-disable-line
-      const data = yield call(login);
-      yield put({ type: 'saveBaseInfo', payload: data });
+    * autoLogin({ payload }, { call, put }) {  // eslint-disable-line
+      const data = yield login().catch((err) => {
+        localStorage.removeItem('remmeber');
+        payload(err);
+        return null;
+      });
+      if (data != null) {
+        yield put({ type: 'saveBaseInfo', payload: data });
+      }
     },
   },
 

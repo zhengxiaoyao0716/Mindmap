@@ -1,30 +1,17 @@
 import request from '../utils/request';
 
 const Api = {
-  login: '/guide/user/login',
-  getVerifyCode: '/guide/verify_code/get',
-  resetPassword: '/guide/password/reset',
-  logout: '/user/logout',
+  create: '/user/project/create',
+  list: '/user/project/list',
 };
 
-export async function login(account, password) {
-  return request(Api.login, { account, password });
+export async function create(name) {
+  return request(Api.create, { name });
 }
 
-export async function getVerifyCode(email, account) {
-  return request(Api.getVerifyCode, { email, account }).catch(e => e);
-  return request(Api.getVerifyCode, { email, account });
+export async function list() {
+  return request(Api.list);
 }
-
-export async function resetPasseord(code, password) {
-  return request(Api.resetPassword, { code, password }).catch(e => e);
-  return request(Api.resetPassword, { code, password });
-}
-
-export async function logout() {
-  return request(Api.logout);
-}
-
 
 /* eslint-disable */
 /*

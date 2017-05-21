@@ -56,6 +56,7 @@ class Home extends React.Component {
               name: '快速开始',
               content: <div>
                 <p style={styles.thirdTitle}>{['一个邮箱只能注册一个账户！', '验证码已发到您的邮箱！', '准备好了吗？让我们开始吧！'][[this.state.step]]}</p>
+                <br /><br />
                 <Sign
                   onNext={() => this.setState({ step: this.state.step + 1 })}
                   onSubmit={() => this.context.router.replace('/account')}

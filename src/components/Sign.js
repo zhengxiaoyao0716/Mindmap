@@ -280,7 +280,9 @@ class Sign extends React.Component {
               });
               this.props.onNext();
             }, 500);
-          }} />
+          }}
+        />
+        <br />
         <Steps current={this.state.step} status={this.state.status}
           size="small">
           <Steps.Step title="注册" description="系统将发送一封邮件到您的邮箱" />

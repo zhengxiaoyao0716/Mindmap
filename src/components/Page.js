@@ -8,24 +8,50 @@ const { Sider, Content } = Layout;
 import localStorage from './../utils/storage';
 import { SigninForm } from './../components/Sign';
 
-function checkLogin() {
-  if (this.props.account.baseInfo == null) {
+export const event = {
+  handles: {},
+  on(pathname, handleDispatch) {
+    if (!event.handles[pathname]) {
+      event.handles[pathname] = [];
+    }
+    event.handles[pathname].push(handleDispatch);
+  },
+  emit(pathname) {
+    event.handles[pathname] && event.handles[pathname].forEach(handle => handle());  // eslint-disable-line
+  },
+};
+
+function checkLogin(account) {
+  if (account.baseInfo == null) {
     if (localStorage.getItem('remember')) {
-      this.props.dispatch({ type: 'account/autoLogin' });
+      this.props.dispatch({
+        type: 'account/autoLogin',
+        payload: () => this.setState({
+          loading: true,
+          loginDialog: true,
+          loggedIn: false,
+        }),
+      });
       return {
         loading: true,
         spinning: '正在自动为您登录',
+        loggedIn: false,
       };
     } else {
       return {
         loading: true,
         loginDialog: true,
+        loggedIn: false,
       };
     }
   }
-  return {
-    loading: false,
-  };
+  if (!this.state || !this.state.loggedIn) {
+    event.emit(this.location.pathname);
+    return {
+      loading: false,
+      loggedIn: true,
+    };
+  }
 }
 
 class Page extends React.Component {
@@ -36,22 +62,29 @@ class Page extends React.Component {
   constructor(props) {
     super(props);
 
-    function findFirst(menu, parenText) {
+    function findFirst(menus, parenText) {
+      const menu = (() => {
+        let index = 0;
+        while (menus[index].children instanceof Function) {
+          index += 1;
+        }
+        return menus[index];
+      })();
       const text = parenText + menu.text;
-      return menu.children instanceof Array ? findFirst(menu.children[0], `${text}-`) : text;
+      return menu.children instanceof Array ? findFirst(menu.children, `${text}-`) : text;
     }
     this.location = window.location;  // eslint-disable-line no-undef
     this.state = {
       collapsed: false,
       mode: 'inline',
-      select: this.location.hash ? this.location.hash.slice(1) : findFirst(this.props.menus[0], ''),
-      ...(checkLogin.call(this)),
+      select: this.location.hash ? this.location.hash.slice(1) : findFirst(this.props.menus, ''),
+      ...(checkLogin.call(this, props.account)),
     };
   }
-  componentWillReceiveProps() {
+  componentWillReceiveProps(props) {
     this.setState({
       select: this.location.hash ? this.location.hash.slice(1) : this.state.select,
-      ...(checkLogin.call(this)),
+      ...(checkLogin.call(this, props.account)),
     });
   }
 
