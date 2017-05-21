@@ -1,4 +1,9 @@
-import { list as listProject, create as createProject } from './../services/project';
+import {
+  list as listProject,
+  create as createProject,
+  deleteProject,
+  remove as removeProject,
+} from './../services/project';
 import { event } from './../components/Page';
 
 export default {
@@ -19,9 +24,17 @@ export default {
       const data = yield call(listProject);
       yield put({ type: 'save', payload: data });
     },
-    *create({ payload: name }, { call, put }) {
+    *create({ payload: { name, description } }, { call, put }) {
       const data = yield call(createProject, name);
       yield put({ type: 'push', payload: data });
+    },
+    *delete({ payload: id }, { call, put }) {
+      yield call(deleteProject, id);
+      yield put({ type: 'pop', payload: id });
+    },
+    *remove({ payload: id }, { call, put }) {
+      yield call(removeProject, id);
+      yield put({ type: 'pop', payload: id });
     },
   },
 
@@ -31,6 +44,9 @@ export default {
     },
     push(state, { payload }) {
       return [...state, payload];
+    },
+    pop(state, { payload }) {
+      return state.filter(({ id }) => payload !== id);
     },
   },
 

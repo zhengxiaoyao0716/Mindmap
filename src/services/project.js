@@ -3,14 +3,24 @@ import request from '../utils/request';
 const Api = {
   create: '/user/project/create',
   list: '/user/project/list',
+  delete: '/user/project/delete',
+  remove: '/user/project/remove',
 };
 
-export async function create(name) {
-  return request(Api.create, { name });
+export async function create(name, description) {
+  return request(Api.create, { name, description });
 }
 
 export async function list() {
   return request(Api.list);
+}
+
+export async function deleteProject(projectId) {
+  return request(Api.delete, { project_id: projectId });
+}
+
+export async function remove(projectId) {
+  return request(Api.remove, { project_id: projectId });
 }
 
 /* eslint-disable */

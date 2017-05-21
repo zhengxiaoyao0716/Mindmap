@@ -8,7 +8,7 @@ const app = dva({
 });
 
 // 2. Plugins
-// app.use({});
+app.use(require('dva-loading')());
 
 // 3. Model
 app.model(require('./models/account.js'));
