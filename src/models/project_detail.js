@@ -12,6 +12,11 @@ export default {
         dispatch({ type: 'get', payload: location.search });
       });
     },
+    setupEdit({ dispatch }) {
+      return event.on('/project/edit', (location) => {
+        dispatch({ type: 'get', payload: location.search });
+      });
+    },
   },
 
   effects: {

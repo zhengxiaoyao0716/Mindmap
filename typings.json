@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "d3": "registry:dt/d3#4.7.0+20170308023845"
+  }
+}

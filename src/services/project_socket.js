@@ -1,20 +1,25 @@
-const socket = { on: () => { } };
+import io from 'socket.io-client';
+import { message } from 'antd';
+
+const socket = io.connect('/Mindmap/socket/project', { path: '/Mindmap/socket.io' });
 export default socket;
 
-export async function join(projectId) {
-  // TODO
-}
-export async function send(message) {
-  // TODO
-}
-export async function leave() {
-  // TODO
+function emit(event, data) {
+  return new Promise(resolve => socket.emit(event, data, resolve))
+    .then(d => JSON.parse(d))
+    .then(d => (d.flag ? d.body : Promise.reject(d.reas)))
+    .catch((e) => {
+      message.error(e);
+      throw e;
+    });
 }
 
-// const socket = io.connect('/Mindmap/socket/project', { 'path': '/Mindmap/socket.io' });
-// socket.on('join', (data) => console.info(`${data.who.name}加入了项目`, data));
-// socket.on('send', (data) => console.info(`${data.sender.name}说：${data.content}`, data));
-// socket.on('leave', (data) => console.info(`${data.who.name}离开了项目`, data));
-// socket.emit('join', { 'project_id': 1 }, console.log);
-// socket.emit('send', 'Test message', console.log);
-// socket.emit('leave', {}, console.log);
+export async function join(projectId) {
+  return emit('join', { project_id: projectId });
+}
+export async function send(content) {
+  return emit('send', content);
+}
+export async function leave() {
+  return emit('leave', {});
+}

@@ -1,8 +1,11 @@
 import React from 'react';
 
 import ChildPage from './../components/ChildPage';
+import Mindmap from './../components/Mindmap';
+import ChatRoom from './../components/ChatRoom';
 
 const ProjectEditor = ({
+  dispatch,
   account: { baseInfo },
   projectDetail: {
     id, name, describe, create_time: createTime, status, is_owner: isOwner, owner, members,
@@ -16,11 +19,12 @@ const ProjectEditor = ({
         icon: 'edit',
         children: (
           <div style={{ height: '100%', width: '100%', backgroundColor: '#fff' }}>
-            <canvas width="100%" height="100%"></canvas>
+            <Mindmap />
+            <ChatRoom />
           </div>
         ),
       },
-    ]} />
+    ]} onBack={() => dispatch({ type: 'projectMessage/leave', payload: {} })} />
   );
 };
 

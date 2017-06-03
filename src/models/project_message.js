@@ -1,31 +1,43 @@
 import socket, { join, send, leave } from './../services/project_socket';
 import { event } from './../components/Page';
+import { onMessage } from './../components/ChatRoom';
 
 export default {
   namespace: 'projectMessage',
 
   state: {
+    commands: [],
   },
 
   subscriptions: {
     setup({ dispatch }) {
       return event.on('/project/edit', (location) => {
-        dispatch({ type: 'join', payload: location.search });
+        dispatch({ type: 'join', payload: (r => r && r[1])(location.search.match(/project_id=(\d)/)) });
       });
     },
-    join({ dispatch }) {
+    join() {
+      socket.removeListener('join');
       return socket.on('join', (data) => {
-        console.log(data, dispatch);
+        onMessage.addKnownUser(data.who);
+        onMessage('系统通知', `@${data.who.account} 加入编辑`);
       });
     },
     send({ dispatch }) {
+      socket.removeListener('send');
       return socket.on('send', (data) => {
-        console.log(data, dispatch);
+        onMessage.addKnownUser(data.sender);
+        if (data.content.startsWith('/')) {
+          dispatch({ type: 'pushCommands', payload: data });
+        } else {
+          onMessage(data.sender, data.content, data.send_time);
+        }
       });
     },
-    leave({ dispatch }) {
+    leave() {
+      socket.removeListener('leave');
       return socket.on('leave', (data) => {
-        console.log(data, dispatch);
+        onMessage.addKnownUser(data.who);
+        onMessage('系统通知', `@${data.who.account} 退出编辑`);
       });
     },
   },
@@ -33,14 +45,13 @@ export default {
   effects: {
     *join({ payload }, { call, put }) {  // eslint-disable-line
       const data = yield call(join, payload);
-      // yield put({ type: 'save', payload: data });
+      yield put({ type: 'saveCommands', payload: data.recent_messages });
     },
     *send({ payload }, { call, put }) {  // eslint-disable-line
-      const data = yield call(send, payload);
-      // yield put({ type: 'save', payload: data });
+      yield call(send, payload);
     },
     *leave({ payload }, { call, put }) {  // eslint-disable-line
-      const data = yield call(leave, payload);
+      yield call(leave, payload);
       // yield put({ type: 'save', payload: data });
     },
   },
@@ -49,6 +60,11 @@ export default {
     save(state, { payload }) {
       return payload;
     },
-    // TODO 接收消息类型，聊天、绘制等等
+    saveCommands(state, { payload }) {
+      return { ...state, commands: payload };
+    },
+    pushCommands(state, { payload }) {
+      return { ...state, commands: [...state.commands, payload] };
+    },
   },
 };
