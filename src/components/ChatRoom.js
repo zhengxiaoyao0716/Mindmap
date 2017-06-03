@@ -52,10 +52,11 @@ class ChatPlugin extends React.Component {
     }
   }
   onSubmit = () => {
-    if (!this.state.value) {
+    const value = this.state.value.trim();
+    if (!value) {
       return;
     }
-    this.props.dispatch({ type: 'projectMessage/send', payload: this.state.value });
+    this.props.dispatch({ type: 'projectMessage/send', payload: value });
     this.setState({ value: '' });
   }
   render() {
