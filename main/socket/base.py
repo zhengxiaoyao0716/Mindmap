@@ -87,7 +87,7 @@ def join(json):
         } for message in Message.query.filter(
             Message.project_id == project_id
         ).order_by(
-            Message.send_time.desc()
+            Message.send_time.asc()
             # ).limit(json.get('limit') or 100).all()]
         ).all()]
     })
