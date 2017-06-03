@@ -15,7 +15,7 @@ from flask_socketio import (
 )
 from flask import request, session
 
-
+from dao.model.base import get_time
 from dao.model import User, Message
 from dao import db_session
 from main.config import Config
@@ -88,7 +88,8 @@ def join(json):
             Message.project_id == project_id
         ).order_by(
             Message.send_time.desc()
-        ).limit(json.get('limit') or 100).all()]
+            # ).limit(json.get('limit') or 100).all()]
+        ).all()]
     })
 
 
@@ -96,18 +97,30 @@ def join(json):
 @request_join
 def send(content):
     """发送消息"""
-    message = Message.append(session['project'], session['user'], content)
-    db_session.flush()
-    emit('send', {
-        'id': message.id,
-        'sender': {
-            'id': message.sender_id,
-            'account':  message.sender.account.code,
-            'name':  message.sender.account.name,
-        },
-        'content': message.content,
-        'send_time': message.send_time,
-    }, room=str(session['project']))
+    if content.startswith('/'):
+        message = Message.append(session['project'], session['user'], content)
+        db_session.flush()
+        emit('send', {
+            'id': message.id,
+            'sender': {
+                'id': message.sender_id,
+                'account':  message.sender.account.code,
+                'name':  message.sender.account.name,
+            },
+            'content': message.content,
+            'send_time': message.send_time,
+        }, room=str(session['project']))
+    else:
+        sender = User.query.get(session['user'])
+        emit('send', {
+            'sender': {
+                'id': sender.id,
+                'account':  sender.account.code,
+                'name':  sender.account.name,
+            },
+            'content': content,
+            'send_time': get_time(),
+        }, room=str(session['project']))
     return make_resp('fin')
 
 

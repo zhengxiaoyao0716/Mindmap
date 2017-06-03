@@ -23,13 +23,7 @@ def create_project():
     project = Project.append(g.user.id, g.data['name'], g.data.get('describe'))
     project.members.append(g.user)
     db_session.flush()
-    return make_resp({
-        'id': project.id,
-        'name': project.name,
-        'describe': project.describe,
-        'create_time': project.create_time,
-        'status': project.status,
-    })
+    return make_resp(project.simple(g.user.id))
 
 
 @route('/invitation/generate')
@@ -46,32 +40,13 @@ def join_project():
     if not project:
         return make_err('邀请券无效或已过期')
     project.members.append(g.user)
-    return make_resp({
-        'id': project.id,
-        'name': project.name,
-        'describe': project.describe,
-        'create_time': project.create_time,
-        'status': project.status,
-    })
+    return make_resp(project.simple(g.user.id))
 
 
 @route('/list')
 def list_project():
     """列出项目"""
-    return make_resp([{
-        'id': project.id,
-        'owner': {
-            'id': project.owner.id,
-            'account': project.owner.account.code,
-            'name': project.owner.account.name,
-            # 'email': project.owner.account.email,
-            # 'phone': project.owner.account.phone,
-        },
-        'name': project.name,
-        # 'describe': project.describe,
-        'create_time': project.create_time,
-        'status': project.status,
-    } for project in g.user.projects])
+    return make_resp([project.simple(g.user.id) for project in g.user.projects])
 
 
 @route('/detail/get')
@@ -83,6 +58,7 @@ def get_project_detail():
     return make_resp({
         'id': project.id,
         'owner': project.owner.simple(),
+        'is_owner': project.owner.id == g.user.id,
         'name': project.name,
         'describe': project.describe,
         'create_time': project.create_time,
@@ -91,7 +67,7 @@ def get_project_detail():
     })
 
 
-@route('/delete')
+@route('/delete', methods=['POST'])
 def delete_project():
     """删除项目"""
     project = Project.query.get(g.data['project_id'])
@@ -100,10 +76,10 @@ def delete_project():
     if project.owner != g.user:
         return make_err('项目所有者才有权删除项目')
     db_session.delete(project)
-    return 'fin'
+    return make_resp('fin')
 
 
-@route('/member/add')
+@route('/member/add', methods=['POST'])
 def add_member():
     """添加项目成员"""
     project = Project.query.get(g.data['project_id'])
@@ -115,21 +91,21 @@ def add_member():
     if not user:
         return make_err('无效的用户ID')
     project.members.append(user)
-    return 'fin'
+    return make_resp('fin')
 
 
-@route('/member/remove')
+@route('/member/remove', methods=['POST'])
 def remove_member():
-    """移除项目成员"""
+    """移除项目成员（或成员从自己项目中移除该项目，即退出）"""
     project = Project.query.get(g.data['project_id'])
     if not project:
         return make_err('项目不存在或已删除')
-    if project.owner != g.user:
-        return make_err('项目所有者才有权移除成员')
-    user_id = g.data['user_id']
+    user_id = g.data.get('user_id', g.user.id)
     if int(user_id) == g.user.id:
         return make_err('身为项目所有者，你不能退出')
+    if user_id != g.user and project.owner != g.user:
+        return make_err('项目所有者才有权移除其他成员')
     db_session.execute(
         'DELETE FROM project_member WHERE project_id = :project_id AND user_id = :user_id',
         {'project_id': project.id, 'user_id': user_id})
-    return 'fin'
+    return make_resp('fin')

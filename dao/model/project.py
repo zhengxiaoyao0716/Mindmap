@@ -43,6 +43,17 @@ class Project(Base):
         # '已归档',
     )
 
+    def simple(self, user_id):
+        """字典化"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'owner': self.owner.account.name,
+            'is_owner': self.owner.id == user_id,
+            'create_time': self.create_time,
+            'status': self.status,
+        }
+
     def gen_invitation(self, member_id, expiration=10 * 60):
         """生成邀请券"""
         serializer = Serializer(self.SECRET_KEY, expires_in=expiration)
