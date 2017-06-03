@@ -59,7 +59,7 @@ class Home extends React.Component {
                 <br /><br />
                 <Sign
                   onNext={() => this.setState({ step: this.state.step + 1 })}
-                  onSubmit={() => this.context.router.replace('/account')}
+                  onSubmit={() => this.context.router.push('/account')}
                 />
               </div>,
             },

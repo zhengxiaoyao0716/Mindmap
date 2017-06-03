@@ -22,7 +22,7 @@ class Frame extends React.Component {
     super(props);
 
     this.state = {
-      route: this.props.children.props.route.path || '/',
+      route: `/${this.props.routes[1].path || ''}`,
       locale: null,
     };
   }
@@ -30,12 +30,12 @@ class Frame extends React.Component {
     return { dispatch: this.props.dispatch };
   }
 
-  componentWillReceiveProps({ children }) {
-    this.setState({ route: children.props.route.path || '/' });
+  componentWillReceiveProps({ routes }) {
+    this.setState({ route: `/${routes[1].path || ''}` });
   }
   handleClick = (e) => {
     // this.setState({ route: e.key });
-    this.context.router.replace(e.key);
+    this.context.router.push(e.key);
   }
 
   changeLocale = (e) => {

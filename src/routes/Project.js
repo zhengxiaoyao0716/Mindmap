@@ -1,19 +1,26 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  Table, Popconfirm, Button,
+  Table, Popconfirm, Button, Modal,
 } from 'antd';
 
 import Page from './../components/Page';
-import { CreateProject } from './../components/Project';
+import { CreateForm, InvitationForm } from './../components/Project';
 
-const ProjectList = ({ projects }, { dispatch }) => {
-  function onDelete(id) {
-    dispatch({ type: 'project/delete', payload: id });
+const ProjectList = ({ projects }, { dispatch, router }) => {
+  function editProject(id) { router.push(`/project/edit?project_id=${id}`); }
+  function watchDetail(id) { router.push(`/project/detail?project_id=${id}`); }
+  function invitationUser(id) {
+    Modal.info({
+      title: '邀请用户加入',
+      content: <InvitationForm projectId={id} />,
+      iconType: null,
+      okText: '关闭',
+      maskClosable: true,
+    });
   }
-  function onRemove(id) {
-    dispatch({ type: 'project/remove', payload: id });
-  }
+  function onDelete(id) { dispatch({ type: 'project/delete', payload: id }); }
+  function onRemove(id) { dispatch({ type: 'project/remove', payload: id }); }
   const columns = [
     {
       title: '项目名',
@@ -26,15 +33,20 @@ const ProjectList = ({ projects }, { dispatch }) => {
       dataIndex: 'create_time',
     }, {
       title: '操作',
-      render: (text, record) => {
+      render: (text, { id, is_owner: isOwner }) => {
         return (
-          record.is_owner ?
-            <Popconfirm title="删除项目" onConfirm={() => onDelete(record.id)}>
-              <Button>删除</Button>
-            </Popconfirm> :
-            <Popconfirm title="退出项目" onConfirm={() => onRemove(record.id)}>
-              <Button>退出</Button>
-            </Popconfirm>
+          <div>
+            <Button onClick={() => editProject(id)} type="primary">编辑</Button>
+            <Button onClick={() => watchDetail(id)} type="primary">查看详情</Button>
+            {isOwner && <Button onClick={() => invitationUser(id)} type="primary">邀请用户</Button>}
+            {isOwner ?
+              <Popconfirm title="删除项目" onConfirm={() => onDelete(id)}>
+                <Button>删除</Button>
+              </Popconfirm> :
+              <Popconfirm title="退出项目" onConfirm={() => onRemove(id)}>
+                <Button>退出</Button>
+              </Popconfirm>}
+          </div>
         );
       },
     },
@@ -51,12 +63,13 @@ const ProjectList = ({ projects }, { dispatch }) => {
 
 ProjectList.contextTypes = {
   dispatch: PropTypes.func.isRequired,
+  router: PropTypes.object.isRequired,
 };
 ProjectList.propTypes = {
   projects: PropTypes.array.isRequired,
 };
 
-let createProjectForm;
+let createForm;
 const Project = ({ dispatch, project }) => {
   return (
     <Page menus={[
@@ -65,11 +78,11 @@ const Project = ({ dispatch, project }) => {
         icon: 'pie-chart',
         children: [
           {
-            text: <CreateProject
-              hook={(form) => { createProjectForm = form; }}
+            text: <CreateForm
+              hook={(form) => { createForm = form; }}
               dispatch={dispatch} />,
             icon: 'plus-circle',
-            children: () => { createProjectForm.show(); },
+            children: () => { createForm.show(); },
           },
           {
             text: '正在进行',

@@ -92,7 +92,7 @@ function Account({ dispatch }, { router }) {
             okText: '是的',
             onOk: () => logout().catch(() => { }).then(() => {
               localStorage.removeItem('remember');
-              router.replace('/');
+              router.push('/');
               dispatch({ type: 'account/saveBaseInfo', payload: null });
             }),
             iconType: null,

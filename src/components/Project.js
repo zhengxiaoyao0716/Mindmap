@@ -1,20 +1,28 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import {
-  Form, Icon, Input, Button, Modal,
+  Form, Icon, Input, Button, Modal, Spin,
 } from 'antd';
 const FormItem = Form.Item;
 
-class CreateProjectForm extends React.Component {
+import QRCode from 'qrcode.react';
+
+import { generateInvitation } from './../services/project';
+import { sessionStorage } from './../utils/storage';
+
+/* eslint-disable react/no-multi-comp */
+
+class Create extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      createProjectDialog: false,
+      CreateDialog: false,
     };
     this.props.hook(this);
   }
   show = () => {
-    this.setState({ createProjectDialog: true });
+    this.setState({ CreateDialog: true });
   }
   handleSubmit = (e) => {
     e.preventDefault();
@@ -23,7 +31,7 @@ class CreateProjectForm extends React.Component {
         return;
       }
       this.props.dispatch({ type: 'project/create', payload: { name, description } });
-      this.setState({ createProjectDialog: false });
+      this.setState({ CreateDialog: false });
     });
   }
   render() {
@@ -31,8 +39,8 @@ class CreateProjectForm extends React.Component {
     return (
       <span>
         <span>创建新项目</span>
-        <Modal title="需要您输入一些信息" visible={this.state.createProjectDialog} footer={null}
-          onCancel={() => { this.setState({ createProjectDialog: false }); }}>
+        <Modal title="需要您输入一些信息" visible={this.state.CreateDialog} footer={null}
+          onCancel={() => { this.setState({ CreateDialog: false }); }}>
           <Form onSubmit={this.handleSubmit} style={styles.form}>
             <FormItem>
               {getFieldDecorator('name', {
@@ -63,7 +71,41 @@ class CreateProjectForm extends React.Component {
   }
 }
 
-export const CreateProject = Form.create()(CreateProjectForm);
+class Invitation extends React.Component {
+  static propTypes = {
+    projectId: PropTypes.number.isRequired,
+  };
+  constructor(props) {
+    super(props);
+
+    const storageKey = `invitation_${props.projectId}`;
+    this.state = {
+      invitation: (() => {
+        const [expires, invitation] = (sessionStorage.getItem(storageKey) || ',').split(',');
+        return expires && expires > new Date().valueOf() ? invitation : null;
+      })(),
+    };
+    this.state.invitation ||  // eslint-disable-line no-unused-expressions
+      this.generateInvitation(props.projectId, storageKey);
+  }
+  generateInvitation = (projectId, storageKey) => {
+    generateInvitation(projectId).then((invitation) => {
+      sessionStorage.setItem(storageKey, `${new Date().valueOf() + (10 * 60 * 1000)},${invitation}`);
+      this.setState({ invitation });
+    });
+  }
+  render() {
+    return (
+      <div>
+        {this.state.invitation ? <QRCode value={this.state.invitation} size={240} /> : <Spin size="large" />}
+      </div>
+    );
+  }
+}
+
+const [CreateForm, InvitationForm] =
+  [Create, Invitation].map(component => Form.create()(component));
+export { CreateForm, InvitationForm };
 
 const styles = {
   form: {

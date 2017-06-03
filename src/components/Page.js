@@ -16,12 +16,12 @@ export const event = {
     }
     event.handles[pathname].push(handleDispatch);
   },
-  emit(pathname) {
-    event.handles[pathname] && event.handles[pathname].forEach(handle => handle());  // eslint-disable-line
+  emit(location) {
+    event.handles[location.pathname] && event.handles[location.pathname].forEach(handle => handle(location));  // eslint-disable-line
   },
 };
 
-function checkLogin(account) {
+function checkLogin(account, location) {
   if (account.baseInfo == null) {
     if (localStorage.getItem('remember')) {
       this.props.dispatch({
@@ -46,7 +46,7 @@ function checkLogin(account) {
     }
   }
   if (!this.state || !this.state.loggedIn) {
-    event.emit(this.location.pathname);
+    event.emit(location);
     return {
       loading: false,
       loggedIn: true,
@@ -57,9 +57,9 @@ function checkLogin(account) {
 class Page extends React.Component {
   static contextTypes = {
     router: React.PropTypes.object.isRequired,
-    // TODO use context
+    location: React.PropTypes.object.isRequired,
   }
-  constructor(props) {
+  constructor(props, { location }) {
     super(props);
 
     function findFirst(menus, parenText) {
@@ -73,18 +73,17 @@ class Page extends React.Component {
       const text = parenText + menu.text;
       return menu.children instanceof Array ? findFirst(menu.children, `${text}-`) : text;
     }
-    this.location = window.location;  // eslint-disable-line no-undef
     this.state = {
       collapsed: false,
       mode: 'inline',
-      select: this.location.hash ? this.location.hash.slice(1) : findFirst(this.props.menus, ''),
-      ...(checkLogin.call(this, props.account)),
+      select: location.hash ? location.hash.slice(1) : findFirst(this.props.menus, ''),
+      ...(checkLogin.call(this, props.account, location)),
     };
   }
-  componentWillReceiveProps(props) {
+  componentWillReceiveProps(props, { location }) {
     this.setState({
-      select: this.location.hash ? this.location.hash.slice(1) : this.state.select,
-      ...(checkLogin.call(this, props.account)),
+      select: location.hash ? location.hash.slice(1) : this.state.select,
+      ...(checkLogin.call(this, props.account, location)),
     });
   }
 
@@ -95,7 +94,7 @@ class Page extends React.Component {
     });
   }
   onSelect = ({ key }) => {
-    this.location.hash = key;
+    this.context.router.push(`${this.context.location.pathname}#${key}`);
     this.setState({ select: key });
   }
 
@@ -149,7 +148,7 @@ class Page extends React.Component {
         </Sider>
         <Content style={{ margin: '0 16px' }}>
           <Breadcrumb style={{ margin: '12px 0' }}>
-            {this.location.pathname.split('/').slice(1).map((nav, index) => (
+            {this.context.location.pathname.split('/').slice(1).map((nav, index) => (
               <Breadcrumb.Item key={index}>{nav}</Breadcrumb.Item>
             ))}
             <Breadcrumb.Item key="selectMenu">{this.state.select}</Breadcrumb.Item>
@@ -158,7 +157,7 @@ class Page extends React.Component {
             {this.contents[this.state.select]}
           </Spin>
           <Modal title="请先登录后再操作" visible={this.state.loginDialog} footer={null}
-            onCancel={() => this.context.router.replace('/')}>
+            onCancel={() => this.context.router.push('/')}>
             <SigninForm onSubmit={() => this.setState({ loginDialog: false })} />
           </Modal>
         </Content>

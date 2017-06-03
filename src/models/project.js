@@ -3,6 +3,7 @@ import {
   create as createProject,
   deleteProject,
   remove as removeProject,
+  getDetail,
 } from './../services/project';
 import { event } from './../components/Page';
 
@@ -49,5 +50,4 @@ export default {
       return state.filter(({ id }) => payload !== id);
     },
   },
-
 };
