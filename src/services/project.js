@@ -4,9 +4,10 @@ const Api = {
   create: '/user/project/create',
   list: '/user/project/list',
   delete: '/user/project/delete',
-  remove: '/user/project/remove',
   getDetail: '/user/project/detail/get',
   invitation: '/user/project/invitation/generate',
+  addMember: '/user/project/member/add',
+  removeMember: '/user/project/member/remove',
 };
 
 export async function create(name, description) {
@@ -17,12 +18,12 @@ export async function list() {
   return request(Api.list);
 }
 
-export async function deleteProject(projectId) {
-  return request(Api.delete, { project_id: projectId });
+export async function remove(projectId) {
+  return request(Api.removeMember, { project_id: projectId });
 }
 
-export async function remove(projectId) {
-  return request(Api.remove, { project_id: projectId });
+export async function deleteProject(projectId) {
+  return request(Api.delete, { project_id: projectId });
 }
 
 export async function getDetail(query) {
@@ -32,3 +33,12 @@ export async function getDetail(query) {
 export async function generateInvitation(projectId) {
   return request(`${Api.invitation}?project_id=${projectId}`);
 }
+
+export async function addMember(projectId, userId) {
+  return request(Api.addMember, { project_id: projectId, user_id: userId });
+}
+
+export async function removeMember(projectId, userId) {
+  return request(Api.removeMember, { project_id: projectId, user_id: userId });
+}
+

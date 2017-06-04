@@ -49,14 +49,14 @@ class Create extends React.Component {
                   { required: true, message: '请输入项目名' },
                 ],
               })(
-                <Input prefix={<Icon type="user" style={{ fontSize: 13 }} />} placeholder="项目名" />,
+                <Input prefix={<Icon type="layout" style={{ fontSize: 13 }} />} placeholder="项目名" />,
               )}
             </FormItem>
             <FormItem>
               {getFieldDecorator('description', {
                 rules: [{ max: 255, message: '项目描述要求255字内' }],
               })(
-                <Input prefix={<Icon type="user" style={{ fontSize: 13 }} />} placeholder="项目描述" />,
+                <Input prefix={<Icon type="edit" style={{ fontSize: 13 }} />} placeholder="项目描述" />,
               )}
             </FormItem>
             <FormItem>

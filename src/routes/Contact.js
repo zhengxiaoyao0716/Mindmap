@@ -8,7 +8,7 @@ import {
 import Page from './../components/Page';
 import { AddContactForm } from './../components/Contact';
 
-const ContactList = ({ contact }, { dispatch }) => {
+const ContactList = ({ contacts }, { dispatch }) => {
   function onDelete(id) { dispatch({ type: 'contact/delete', payload: id }); }
   const columns = [
     {
@@ -33,7 +33,7 @@ const ContactList = ({ contact }, { dispatch }) => {
   return (
     <div>
       <Table
-        dataSource={contact}
+        dataSource={contacts}
         columns={columns}
       />
     </div>
@@ -56,16 +56,14 @@ const Contact = ({ dispatch, contact }) => {
         icon: 'pie-chart',
         children: [
           {
-            text: <AddContactForm
-              hook={(form) => { addContactForm = form; }}
-              dispatch={dispatch} />,
+            text: <AddContactForm hook={(form) => { addContactForm = form; }} dispatch={dispatch} />,
             icon: 'user-add',
             children: () => { addContactForm.show(); },
           },
           {
             text: '全部联系人',
             icon: 'contacts',
-            children: <ContactList contact={contact} />,
+            children: <ContactList contacts={contact} />,
           },
         ],
       },

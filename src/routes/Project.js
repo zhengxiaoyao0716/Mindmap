@@ -6,16 +6,33 @@ import {
 
 import Page from './../components/Page';
 import { CreateForm, InvitationForm } from './../components/Project';
+import { AddContactForm } from './../components/Contact';
+import { addMember } from './../services/project';
 
 const ProjectList = ({ projects }, { dispatch, router }) => {
   function editProject(id) { router.push(`/project/edit?project_id=${id}`); }
   function watchDetail(id) { router.push(`/project/detail?project_id=${id}`); }
   function invitationUser(id) {
-    Modal.info({
-      title: '邀请用户加入',
+    let addContactForm;
+    Modal.confirm({
+      title: <p>
+        <span>邀请用户加入</span>
+        <AddContactForm hook={(form) => { addContactForm = form; }} />
+      </p>,
       content: <InvitationForm projectId={id} />,
       iconType: null,
-      okText: '关闭',
+      okText: '邀请指定用户',
+      cancelText: '关闭',
+      onOk: () => {
+        addContactForm.show();
+        return new Promise((resolve) => {
+          addContactForm.resolve = (user) => {
+            addContactForm.resolve = null;
+            addMember(id, user.id).then(resolve);
+            return true;
+          };
+        });
+      },
       maskClosable: true,
     });
   }
@@ -78,9 +95,7 @@ const Project = ({ dispatch, project }) => {
         icon: 'pie-chart',
         children: [
           {
-            text: <CreateForm
-              hook={(form) => { createForm = form; }}
-              dispatch={dispatch} />,
+            text: <CreateForm hook={(form) => { createForm = form; }} dispatch={dispatch} />,
             icon: 'plus-circle',
             children: () => { createForm.show(); },
           },

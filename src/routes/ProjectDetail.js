@@ -5,13 +5,14 @@ const Panel = Collapse.Panel;
 import ChildPage from './../components/ChildPage';
 
 const ProjectDetail = ({
+  dispatch,
   account: { baseInfo },
   projectDetail: {
     id, name, describe, create_time: createTime, status, is_owner: isOwner, owner, members,
   },
 }) => {
-  function removeMember(memberId) {
-    console.log(id, memberId);
+  function removeMember(userId) {
+    dispatch({ type: 'projectDetail/removeMember', payload: { projectId: id, userId } });
   }
   function buildUserPanel({ name: useName, account, email, phone }) {
     return (

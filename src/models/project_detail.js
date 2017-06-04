@@ -1,4 +1,4 @@
-import { getDetail } from './../services/project';
+import { getDetail, removeMember } from './../services/project';
 import { event } from './../components/Page';
 
 export default {
@@ -24,11 +24,18 @@ export default {
       const data = yield call(getDetail, payload);
       yield put({ type: 'save', payload: data });
     },
+    *removeMember({ payload: { projectId, userId } }, { call, put }) {  // eslint-disable-line
+      yield call(removeMember, projectId, userId);
+      yield put({ type: 'pop', payload: userId });
+    },
   },
 
   reducers: {
     save(state, { payload }) {
       return payload;
+    },
+    pop(state, { payload: id }) {
+      return { ...state, members: state.members.filter(user => user.id !== id) };
     },
   },
 };
