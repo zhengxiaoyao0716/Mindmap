@@ -28,22 +28,18 @@ export const helper = (() => {
 
   /** @type {HTMLDivElement[]} */
   const userCursors = [];
-  const colors = (() => {
-    const stack = [
-      '#FF5252',  // red
-      '#4CAF50',  // green
-      '#03A9F4',  // blue
-      '#E91E63',  // pink
-      '#FFEB3B',  // yellow
-      '#3F51B5',  // indigo
-      // 0x000000,  // black
-      // 0x7F7F7F,  // grey
-      // 0xFFFFFF,  // white
-    ];
-    const temp = new Array(stack.length).fill(null);
-    const indexs = temp.map((_, i) => [i, Math.random()]).sort((l, r) => l[1] > r[1]);
-    return temp.map((_, i) => stack[indexs[i][0]]);
-  })();
+  const colors = [
+    '#FF5252',  // red
+    '#4CAF50',  // green
+    '#03A9F4',  // blue
+    '#E91E63',  // pink
+    '#FFEB3B',  // yellow
+    '#3F51B5',  // indigo
+    // 0x000000,  // black
+    // 0x7F7F7F,  // grey
+    // 0xFFFFFF,  // white
+  ];
+  const myFlag = String(Math.random()).slice(2, 10);
 
   const helper = {  //  eslint-disable-line no-shadow
     init(_dispatch) {
@@ -53,17 +49,23 @@ export const helper = (() => {
       helperPanel = document.querySelector('#helperPanel');
       /* eslint-enable no-undef */
     },
-    addUserCursor(user) {
+    addUserCursor(user, flag) {
       const div = document.createElement('div');
       helperPanel.appendChild(div);
       userCursors[user.id] = div;
       div.style.position = 'absolute';
       div.title = user.name;
-      ReactDom.render(<Icon type="smile-o" style={{ fontSize: '30px', color: colors[user.id % colors.length] }} />, div);
+      ReactDom.render(<Icon type="smile-o" style={{
+        fontSize: '30px',
+        color: colors[flag % colors.length],
+      }} />, div);
       return div;
     },
-    updateUserCursor(user, xy) {
-      const div = userCursors[user.id] || helper.addUserCursor(user);
+    updateUserCursor(user, xy, flag) {
+      if (flag === myFlag) {
+        return;
+      }
+      const div = userCursors[user.id] || helper.addUserCursor(user, flag);
       if (!xy) {
         div.style.display = 'none';
         return;
@@ -80,14 +82,18 @@ export const helper = (() => {
       dispatch({
         type: 'projectMessage/send',
         payload: xy ?
-          `./cursor/update?x=${xy[0]}&y=${xy[1]}&node=${data.path}.${data.id}` :
-          `./cursor/update?node=${data.path}.${data.id}`,
+          `./cursor/update?x=${xy[0]}&y=${xy[1]}&node=${data.path}.${data.id}&flag=${myFlag}` :
+          `./cursor/update?node=${data.path}.${data.id}&flag=${myFlag}`,
       });
     },
     onCommand: (who, what, when) => {
       const [path, data] = parseCommand(what);
       const handler = ({
-        './cursor/update': () => helper.updateUserCursor(who, (data.x == null || data.y == null) ? null : [data.x, data.y]),
+        './cursor/update': () => helper.updateUserCursor(
+          who,
+          (data.x == null || data.y == null) ? null : [data.x, data.y],
+          data.flag,
+        ),
       })[path];
       handler && handler();
     },
@@ -227,9 +233,22 @@ class Mindmap extends React.Component {
   }
   dataManager = {
     commandIndex: 0,
+    // 解析命令集，处理同步问题
     from: (commands) => {
-      commands.slice(this.dataManager.commandIndex).every((command) => {
-        this.dataManager.commandIndex += 1;
+      let commandIndex = this.dataManager.commandIndex;
+      const newCommands = commands.slice(commandIndex)
+        .sort((l, r) => l.send_time > r.send_time);
+      if (!newCommands.length) {
+        return;
+      }
+      if (commandIndex > 0 && newCommands[0].send_time < commands[commandIndex - 1].send_time) {
+        console.warn('时间乱序，开始重排');
+        this.dataManager.commandIndex = 0;
+        this.dataManager.set({ id: this.root.data.id, path: '' });
+        return this.dataManager.from(commands);
+      }
+      newCommands.every((command) => {
+        commandIndex += 1;
         const [path, query] = parseCommand(command.content);
         const handler = ({
           '/node/add': (data) => {
@@ -258,7 +277,7 @@ class Mindmap extends React.Component {
           try {
             handler(query);
           } catch (error) {
-            if (commands.length - this.dataManager.commandIndex < 6) {
+            if (commands.length - commandIndex < 6) {
               Message.error(`${error.message}, from ${command.sender.name} [${command.send_time}]`, 3);
             }
             console.warn(error.message, command);
@@ -268,6 +287,7 @@ class Mindmap extends React.Component {
         }
         return true;
       });
+      this.dataManager.commandIndex = commandIndex;
     },
     set: (data) => {
       this.dataManager.commandIndex = 0;
