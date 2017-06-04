@@ -7,6 +7,7 @@ Socket IO通讯
 """
 
 from functools import wraps
+from urllib.parse import unquote
 
 from flask_socketio import (
     SocketIO, join_room, leave_room,
@@ -97,6 +98,7 @@ def join(json):
 @request_join
 def send(content):
     """发送消息"""
+    content = unquote(content)
     if content.startswith('/'):
         message = Message.append(session['project'], session['user'], content)
         db_session.flush()
