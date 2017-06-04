@@ -23,7 +23,7 @@ export const onMessage = (who, what, when) => {
     value.startsWith('@') ?
       <a onClick={() => onMessage.linkUser(value.slice(1))}
         title={value.slice(1)}>{trUserName(memberMap[value.slice(1)])}</a> :
-      <span>{value}</span>
+      <span style={{ wordBreak: 'break-all' }}>{value}</span>
   ));
   notification.open({ message, description, duration: 0 });
 };

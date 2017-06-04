@@ -1,7 +1,7 @@
 // / <reference path="./../../typings/index.d.ts" />
 import React from 'react';
 import ReactDom from 'react-dom';
-import { Popover, Icon, message as Message } from 'antd';
+import { Popover, Icon, message as Message, Modal } from 'antd';
 import * as d3 from 'd3';
 
 export function parseCommand(command) {
@@ -41,6 +41,58 @@ export const helper = (() => {
   ];
   const myFlag = String(Math.random()).slice(2, 10);
 
+  const onDrag = (d) => {
+    onDrag.update(
+      d3.event.x - onDrag.offset[0], d3.event.y - onDrag.offset[1],
+      d.data.path, d.data.id, d.data.name);
+  };
+  onDrag.update = (x, y, path, id, name) => {
+    const backup = onDrag.update;
+    onDrag.update = (x, y, path, id, name) => {  // eslint-disable-line no-shadow
+      onDrag.update.cache = { x, y, path, id, name };
+    };
+    onDrag.update(x, y, path, id, name);
+
+    onDrag.timeout = setTimeout(() => {
+      const { x, y, path, id, name } = onDrag.update.cache;  // eslint-disable-line no-shadow
+      dispatch({
+        type: 'projectMessage/send',
+        payload: `./node/drag?x=${x}&y=${y}&node=${path}.${id}&flag=${myFlag}&nodeName=${name || id}`,
+      });
+      onDrag.update = backup;
+    }, 100);
+  };
+  onDrag.start = (d) => {
+    onDrag.isDrag = true;
+    onDrag.offset = [d3.event.x - d.y, d3.event.y - d.x];
+  };
+  onDrag.end = (d) => {
+    clearTimeout(onDrag.timeout);
+    dispatch({
+      type: 'projectMessage/send',
+      payload: './node/drag',
+    });
+    if (d.data.id !== onDrag.collide.id && d.data.path !== onDrag.collide.path) {
+      const [x, y] = [
+        d3.event.x - onDrag.offset[0] - onDrag.collide.x,
+        d3.event.y - onDrag.offset[1] - onDrag.collide.y,
+      ];
+      if (Math.abs(x) + Math.abs(y) < 100) {
+        Modal.confirm({
+          title: '移动节点',
+          content: `确定要将节点 ${d.data.name || d.data.id} 移动到 ${onDrag.collide.data.name || onDrag.collide.data.id} ？`,
+          onOk: () => dispatch({
+            type: 'projectMessage/send',
+            payload: `/node/move?name=${d.data.id}&from=${d.data.path}&to=${onDrag.collide.data.path}.${onDrag.collide.data.id}`,
+          }),
+        });
+      }
+    }
+    onDrag.isDrag = false;
+  };
+
+  let mark;
+
   const helper = {  //  eslint-disable-line no-shadow
     init(_dispatch) {
       dispatch = _dispatch;
@@ -48,36 +100,61 @@ export const helper = (() => {
       // container = document.querySelector('#d3container>svg');
       helperPanel = document.querySelector('#helperPanel');
       /* eslint-enable no-undef */
+
+      mark = document.createElement('div');
+      mark.style.position = 'absolute';
+      ReactDom.render(<Icon type="bulb" style={{
+        fontSize: '30px',
+        color: 'green',
+      }} />, mark);
+      mark.style.display = 'none';
+      helperPanel.appendChild(mark);
     },
     addUserCursor(user, flag) {
       const div = document.createElement('div');
       helperPanel.appendChild(div);
-      userCursors[user.id] = div;
       div.style.position = 'absolute';
       div.title = user.name;
       ReactDom.render(<Icon type="smile-o" style={{
         fontSize: '30px',
         color: colors[flag % colors.length],
       }} />, div);
-      return div;
+
+      const nodeName = document.createElement('div');
+      helperPanel.appendChild(nodeName);
+      nodeName.style.position = 'absolute';
+
+      userCursors[user.id] = { div, nodeName };
+      return userCursors[user.id];
     },
-    updateUserCursor(user, xy, flag) {
-      if (flag === myFlag) {
+    updateUserCursor(user, xy, flag, nodeName = '') {
+      const cursor = userCursors[user.id] || helper.addUserCursor(user, flag);
+      cursor.div.style.display = 'none';
+      cursor.nodeName.style.display = 'none';
+
+      if (flag === myFlag && !nodeName) {
         return;
       }
-      const div = userCursors[user.id] || helper.addUserCursor(user, flag);
+
+      let div;
+      if (nodeName) {
+        div = cursor.nodeName;
+        div.innerText = nodeName;
+      } else {
+        div = cursor.div;
+        cursor.nodeName.innerText = '';
+      }
       if (!xy) {
-        div.style.display = 'none';
         return;
       }
       div.style.display = 'block';
       div.style.left = `${xy[0]}px`;
       div.style.top = `${xy[1]}px`;
     },
-    updateMyPosition(xy, data) {
-      const backup = helper.updateMyPosition;
-      helper.updateMyPosition = () => { };
-      setTimeout(() => (helper.updateMyPosition = backup), 100);
+    dispatchMyPosition(xy, data) {
+      const backup = helper.dispatchMyPosition;
+      helper.dispatchMyPosition = () => { };
+      setTimeout(() => (helper.dispatchMyPosition = backup), 100);
 
       dispatch({
         type: 'projectMessage/send',
@@ -85,6 +162,17 @@ export const helper = (() => {
           `./cursor/update?x=${xy[0]}&y=${xy[1]}&node=${data.path}.${data.id}&flag=${myFlag}` :
           `./cursor/update?node=${data.path}.${data.id}&flag=${myFlag}`,
       });
+    },
+    updateMyPosition(xy, data) {
+      xy && (onDrag.collide = { x: xy[0], y: xy[1], data });
+      if (xy && onDrag.isDrag) {
+        mark.style.left = `${xy[0] - 15}px`;
+        mark.style.top = `${xy[1] - 15}px`;
+        mark.style.display = 'block';
+      } else {
+        mark.style.display = 'none';
+      }
+      helper.dispatchMyPosition(xy, data);
     },
     onCommand: (who, what, when) => {
       const [path, data] = parseCommand(what);
@@ -94,9 +182,16 @@ export const helper = (() => {
           (data.x == null || data.y == null) ? null : [data.x, data.y],
           data.flag,
         ),
+        './node/drag': () => helper.updateUserCursor(
+          who,
+          (data.x == null || data.y == null) ? null : [data.x, data.y],
+          data.flag,
+          data.nodeName,
+        ),
       })[path];
       handler && handler();
     },
+    onDrag: d3.drag().on('drag', onDrag).on('start', onDrag.start).on('end', onDrag.end),
   };
   return helper;
 })();
@@ -189,7 +284,7 @@ class Mindmap extends React.Component {
             this.contextMenu();
             dispatch({
               type: 'projectMessage/send',
-              payload: `/node/cut?name=${contextMenu.data.id}&path=${contextMenu.data.path}`,
+              payload: `/node/delete?name=${contextMenu.data.id}&path=${contextMenu.data.path}`,
             });
           }}><Icon type="delete" /> 删除</a></p>
         </div>} title="编辑节点" trigger="click">
@@ -247,7 +342,7 @@ class Mindmap extends React.Component {
         this.dataManager.set({ id: this.root.data.id, path: '' });
         return this.dataManager.from(commands);
       }
-      newCommands.every((command) => {
+      newCommands.forEach((command) => {
         commandIndex += 1;
         const [path, query] = parseCommand(command.content);
         const handler = ({
@@ -257,20 +352,26 @@ class Mindmap extends React.Component {
             }
             this.dataManager.add(data.name, data.path);
           },
-          '/node/cut': (data) => {
+          '/node/delete': (data) => {
             if (!data.name) {
               throw new Error('缺少节点参数');
             }
             if (!data.path) {
               throw new Error('根节点不可删除');
             }
-            this.dataManager.cut(data.name, data.path);
+            this.dataManager.delete(data.name, data.path);
           },
           '/node/edit': (data) => {
             if (!data.name || !data.path) {
               throw new Error('缺少节点参数');
             }
             this.dataManager.edit(data.name, data.path);
+          },
+          '/node/move': (data) => {
+            if (!data.name || !data.from || !data.to) {
+              throw new Error('缺少节点参数');
+            }
+            this.dataManager.move(data.name, data.from, data.to);
           },
         })[path];
         if (handler) {
@@ -285,7 +386,6 @@ class Mindmap extends React.Component {
         } else {
           console.warn('未知命令', command);
         }
-        return true;
       });
       this.dataManager.commandIndex = commandIndex;
     },
@@ -304,7 +404,7 @@ class Mindmap extends React.Component {
       node.children.push({ id: name, path });
       this.dataManager.update();
     },
-    cut: (name, path) => {
+    delete: (name, path) => {
       const node = this.dataManager.find(path);
       node.children = node.children.filter(data => data.id !== name);
       this.dataManager.update();
@@ -313,8 +413,26 @@ class Mindmap extends React.Component {
       this.dataManager.find(path).name = name;
       this.dataManager.update();
     },
-    find: (path) => {
-      let cursor = { children: [this.root.data] };
+    move: (name, from, to) => {
+      const fromNode = this.dataManager.find(from);
+      const toNode = this.dataManager.find(to);
+      const node = this.dataManager.find(name, fromNode);
+      if (!fromNode || !toNode || !node) {
+        throw new Error('无效的节点路径');
+      }
+
+      if (!toNode.children) {
+        toNode.children = [];
+      } else if (toNode.children.some(data => (data.id === name))) {
+        throw new Error('兄弟节点id冲突');
+      }
+      toNode.children.push(node);
+      fromNode.children = fromNode.children.filter(data => data.id !== name);
+
+      this.dataManager.update();
+    },
+    find: (path, parent = null) => {
+      let cursor = parent || { children: [this.root.data] };
       if (!path.split('.').every((id) => {
         if (!id) {
           return true;
@@ -362,7 +480,8 @@ class Mindmap extends React.Component {
           );
         })
         .on('mouseenter', d => helper.updateMyPosition([d.y, d.x], d.data))
-        .on('mouseleave', d => helper.updateMyPosition(null, d.data));
+        .on('mouseleave', d => helper.updateMyPosition(null, d.data))
+        .call(helper.onDrag);
       nodeEnter.append('circle')
         .attr('class', 'node')
         .attr('r', 1e-6)
@@ -421,7 +540,7 @@ class Mindmap extends React.Component {
 
       link.exit().transition()
         .duration(duration)
-        .attr('d', (d) => {
+        .attr('d', () => {
           const o = { x: source.x, y: source.y };
           return diagonal(o, o);
         })
