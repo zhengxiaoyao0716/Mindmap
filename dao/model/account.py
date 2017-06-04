@@ -129,12 +129,13 @@ class User(Base):
     @classmethod
     def search(cls, keyword):
         """查找用户（精确查询）"""
-        return User.query.filter(or_(
-            Account.code == keyword,
-            Account.name == keyword,
-            Account.phone == keyword,
-            Account.email == keyword,
-        )).all()
+        return User.query.join(Account, Account.id == User.account_id) \
+            .filter(or_(
+                Account.code == keyword,
+                Account.name == keyword,
+                Account.phone == keyword,
+                Account.email == keyword,
+            )).all()
 
     def add_contact(self, user_id):
         """添加联系人"""

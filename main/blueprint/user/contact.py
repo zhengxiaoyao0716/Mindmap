@@ -26,11 +26,7 @@ def add_contact():
 @route('/list')
 def list_contact():
     """列出联系人"""
-    return make_resp([{
-        'id': contact.id,
-        'account': contact.account.code,
-        'name': contact.account.name,
-    } for contact in g.user.contacts])
+    return make_resp([contact.simple() for contact in g.user.contacts])
 
 
 @route('/delete', methods=['POST'])
