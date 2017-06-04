@@ -8,7 +8,7 @@ import {
 } from 'antd';
 
 export const onMessage = (who, what, when) => {
-  const trUserName = name => (onMessage.baseInfo.name === name ? '我' : name);
+  const trUserName = name => (onMessage.baseInfo && onMessage.baseInfo.name === name ? '我' : name);
   const message = (
     <p>
       <span>from </span>

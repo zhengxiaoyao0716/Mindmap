@@ -19,6 +19,15 @@ export const event = {
   emit(location) {
     event.handles[location.pathname] && event.handles[location.pathname].forEach(handle => handle(location));  // eslint-disable-line
   },
+  queue: {},
+  ready(key, onReady) {
+    if (onReady == null) {
+      event.queue[key] && event.queue[key]();
+      event.queue[key] = false;
+    } else {
+      event.queue[key] === false ? onReady() : (event.queue[key] = onReady);
+    }
+  },
 };
 
 function checkLogin(account, location) {

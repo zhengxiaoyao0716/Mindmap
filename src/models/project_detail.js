@@ -22,6 +22,7 @@ export default {
   effects: {
     *get({ payload }, { call, put }) {  // eslint-disable-line
       const data = yield call(getDetail, payload);
+      event.ready('/project/edit#join');
       yield put({ type: 'save', payload: data });
     },
     *removeMember({ payload: { projectId, userId } }, { call, put }) {  // eslint-disable-line

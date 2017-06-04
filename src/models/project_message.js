@@ -18,10 +18,11 @@ export default {
     },
     join() {
       socket.removeListener('join');
-      return socket.on('join', (data) => {
-        onMessage.addKnownUser(data.who);
-        onMessage('系统通知', `@${data.who.account} 加入编辑`);
-      });
+      return socket.on('join', data =>
+        event.ready('/project/edit#join', () => {
+          onMessage.addKnownUser(data.who);
+          onMessage('系统通知', `@${data.who.account} 加入编辑`);
+        }));
     },
     send({ dispatch }) {
       socket.removeListener('send');

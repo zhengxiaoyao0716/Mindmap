@@ -18,7 +18,7 @@ export async function join(projectId) {
   return emit('join', { project_id: projectId });
 }
 export async function send(content) {
-  return emit('send', content);
+  return emit('send', encodeURI(content));
 }
 export async function leave() {
   return emit('leave', {});

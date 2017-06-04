@@ -14,10 +14,10 @@ export default {
   },
 
   effects: {
-    * autoLogin({ payload }, { call, put }) {  // eslint-disable-line
+    * autoLogin({ payload: onFailed }, { call, put }) {  // eslint-disable-line
       const data = yield login().catch((err) => {
         localStorage.removeItem('remmeber');
-        payload(err);
+        onFailed(err);
         return null;
       });
       if (data != null) {
