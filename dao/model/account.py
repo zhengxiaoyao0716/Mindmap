@@ -69,6 +69,8 @@ class Account(Base):
             self = cls.query.filter(cls.code == code).first()
             if not self:
                 return None, u'帐号不存在'
+            if not self.user:
+                return None, u'帐号未激活'
             if not self.check_password(password):
                 return None, u'密码错误'
         else:
@@ -147,8 +149,15 @@ class User(Base):
     @classmethod
     def append(cls, code, password, name, email=None, phone=None):
         """添加新用户"""
-        account = Account.append(code, password, name, email, phone)
-        db_session.flush()
+        account = Account.query.filter(Account.code == code).first()
+        if account:
+            account.set_password(password)
+            account.name = name
+            account.email = email
+            account.phone = phone
+        else:
+            account = Account.append(code, password, name, email, phone)
+            db_session.flush()
         return append_model_instance(cls, account.id)
 
     def simple(self):
