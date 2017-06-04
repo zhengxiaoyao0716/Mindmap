@@ -101,9 +101,9 @@ def remove_member():
     if not project:
         return make_err('项目不存在或已删除')
     user_id = g.data.get('user_id', g.user.id)
-    if int(user_id) == g.user.id:
-        return make_err('身为项目所有者，你不能退出')
-    if user_id != g.user and project.owner != g.user:
+    if int(user_id) == project.owner_id:
+        return make_err('项目所有者不能退出')
+    if user_id != g.user.id and project.owner != g.user:
         return make_err('项目所有者才有权移除其他成员')
     db_session.execute(
         'DELETE FROM project_member WHERE project_id = :project_id AND user_id = :user_id',
