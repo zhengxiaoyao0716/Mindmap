@@ -56,7 +56,10 @@ class AddContact extends React.Component {
       <span>
         <span>添加联系人</span>
         <Modal title="请输入关键词以查询" visible={this.state.CreateDialog} footer={null}
-          onCancel={() => { this.resolve && this.resolve(); this.setState({ CreateDialog: false }); }}>
+          onCancel={() => {
+            this.resolve && this.resolve();
+            this.setState({ CreateDialog: false });
+          }}>
           <FormItem>
             {getFieldDecorator('keyword', {
               rules: [

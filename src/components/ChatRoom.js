@@ -8,17 +8,22 @@ import {
 } from 'antd';
 
 export const onMessage = (who, what, when) => {
+  const trUserName = name => (onMessage.baseInfo.name === name ? '我' : name);
   const message = (
     <p>
       <span>from </span>
-      <a onClick={() => onMessage.linkUser(who.account)} title={who.account}>{who.name || who}</a>
+      <a onClick={() => onMessage.linkUser(who.account)}
+        title={who.account}>{trUserName(who.name || who)}</a>
       <span> : </span>
       {when && <small>[{when.slice(5, -3)}]</small>}
     </p>
   );
   const memberMap = onMessage.memberMap || {};
   const description = what.split(/(@\w{5,30})/g).map(value => (
-    value.startsWith('@') ? <a onClick={() => onMessage.linkUser(value.slice(1))} title={value.slice(1)}>{memberMap[value.slice(1)]}</a> : <span>{value}</span>
+    value.startsWith('@') ?
+      <a onClick={() => onMessage.linkUser(value.slice(1))}
+        title={value.slice(1)}>{trUserName(memberMap[value.slice(1)])}</a> :
+      <span>{value}</span>
   ));
   notification.open({ message, description, duration: 0 });
 };
@@ -41,7 +46,10 @@ class ChatPlugin extends React.Component {
     value: '',
   }
   componentDidMount() {
-    onMessage.linkUser = account => account && this.setState({ value: `${this.state.value}@${account} ` });
+    onMessage.linkUser = (account) => {
+      account && this.setState({ value: `${this.state.value}@${account} ` });
+      this.setState({ focus: true });
+    };
   }
   onModelChange = () => {
     const value = this.state.value;
@@ -90,10 +98,13 @@ class ChatRoom extends React.Component {
     this.container = container;
     ReactDOM.render(<ChatPlugin {...this.props} />, container);
   }
-  componentWillReceiveProps(props) {
-    if (props.projectDetail.members) {
+  componentWillReceiveProps({ projectDetail: { members }, account: { baseInfo } }) {
+    if (baseInfo) {
+      onMessage.baseInfo = baseInfo;
+    }
+    if (members) {
       onMessage.memberMap = {};
-      props.projectDetail.members.forEach(({ name, account }) => {
+      members.forEach(({ name, account }) => {
         onMessage.memberMap[account] = name;
       });
     }
@@ -107,4 +118,4 @@ class ChatRoom extends React.Component {
 }
 
 import { connect } from 'dva';
-export default connect(({ projectDetail }) => ({ projectDetail }))(ChatRoom);
+export default connect(({ projectDetail, account }) => ({ projectDetail, account }))(ChatRoom);

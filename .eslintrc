@@ -2,6 +2,7 @@
   "parser": "babel-eslint",
   "extends": "airbnb",
   "rules": {
+    "no-unused-expressions": "warn",
     "react/jsx-first-prop-new-line": "off",
     "react/self-closing-comp": "off",
     "react/jsx-closing-bracket-location": "off",
