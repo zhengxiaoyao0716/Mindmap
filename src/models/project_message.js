@@ -1,6 +1,7 @@
 import socket, { join, send, leave } from './../services/project_socket';
 import { event } from './../components/Page';
 import { onMessage } from './../components/ChatRoom';
+import { helper } from './../components/Mindmap';
 
 export default {
   namespace: 'projectMessage',
@@ -28,6 +29,8 @@ export default {
         onMessage.addKnownUser(data.sender);
         if (data.content.startsWith('/')) {
           dispatch({ type: 'pushCommands', payload: data });
+        } else if (data.content.startsWith('./')) {
+          helper.onCommand(data.sender, data.content, data.send_time);
         } else {
           onMessage(data.sender, data.content, data.send_time);
         }

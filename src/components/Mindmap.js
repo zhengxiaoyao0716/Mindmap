@@ -4,6 +4,97 @@ import ReactDom from 'react-dom';
 import { Popover, Icon, message as Message } from 'antd';
 import * as d3 from 'd3';
 
+export function parseCommand(command) {
+  const [path, query = ''] = command.split('?');
+  const data = {};
+  query.split('&').forEach((kv) => {
+    if (!kv) {
+      return;
+    }
+    const [k, v] = kv.split('=');
+    data[k] = v;
+  });
+  return [path, data];
+}
+
+export const helper = (() => {
+  const document = window.document;  //  eslint-disable-line no-undef
+  // /** @type {HTMLDivElement} */
+  // let container;
+  /** @type {HTMLDivElement} */
+  let helperPanel;
+  /** @type {function} */
+  let dispatch;
+
+  /** @type {HTMLDivElement[]} */
+  const userCursors = [];
+  const colors = (() => {
+    const stack = [
+      '#FF5252',  // red
+      '#4CAF50',  // green
+      '#03A9F4',  // blue
+      '#E91E63',  // pink
+      '#FFEB3B',  // yellow
+      '#3F51B5',  // indigo
+      // 0x000000,  // black
+      // 0x7F7F7F,  // grey
+      // 0xFFFFFF,  // white
+    ];
+    const temp = new Array(stack.length).fill(null);
+    const indexs = temp.map((_, i) => [i, Math.random()]).sort((l, r) => l[1] > r[1]);
+    return temp.map((_, i) => stack[indexs[i][0]]);
+  })();
+
+  const helper = {  //  eslint-disable-line no-shadow
+    init(_dispatch) {
+      dispatch = _dispatch;
+      /* eslint-disable no-undef */
+      // container = document.querySelector('#d3container>svg');
+      helperPanel = document.querySelector('#helperPanel');
+      /* eslint-enable no-undef */
+    },
+    addUserCursor(user) {
+      const div = document.createElement('div');
+      helperPanel.appendChild(div);
+      userCursors[user.id] = div;
+      div.style.position = 'absolute';
+      div.title = user.name;
+      ReactDom.render(<Icon type="smile-o" style={{ fontSize: '30px', color: colors[user.id % colors.length] }} />, div);
+      return div;
+    },
+    updateUserCursor(user, xy) {
+      const div = userCursors[user.id] || helper.addUserCursor(user);
+      if (!xy) {
+        div.style.display = 'none';
+        return;
+      }
+      div.style.display = 'block';
+      div.style.left = `${xy[0]}px`;
+      div.style.top = `${xy[1]}px`;
+    },
+    updateMyPosition(xy, data) {
+      const backup = helper.updateMyPosition;
+      helper.updateMyPosition = () => { };
+      setTimeout(() => (helper.updateMyPosition = backup), 100);
+
+      dispatch({
+        type: 'projectMessage/send',
+        payload: xy ?
+          `./cursor/update?x=${xy[0]}&y=${xy[1]}&node=${data.path}.${data.id}` :
+          `./cursor/update?node=${data.path}.${data.id}`,
+      });
+    },
+    onCommand: (who, what, when) => {
+      const [path, data] = parseCommand(what);
+      const handler = ({
+        './cursor/update': () => helper.updateUserCursor(who, (data.x == null || data.y == null) ? null : [data.x, data.y]),
+      })[path];
+      handler && handler();
+    },
+  };
+  return helper;
+})();
+
 class Mindmap extends React.Component {
   static defaultProps = {
     offset: [100, 0],
@@ -120,10 +211,16 @@ class Mindmap extends React.Component {
       .attr('height', height)
       .append('g');
     this.treemap = d3.tree().size([height, width]);
+
+    // 辅助面板
+    helper.init(dispatch);
   }
-  componentWillReceiveProps({ projectDetail: { name }, projectMessage: { commands } }) {
-    this.root || this.dataManager.set({ id: name, path: '' });
-    this.dataManager.from(commands);
+  componentWillReceiveProps({
+    projectDetail,
+    projectMessage,
+  }) {
+    this.root || (projectDetail.name && this.dataManager.set({ id: projectDetail.name, path: '' }));
+    projectMessage && this.dataManager.from(projectMessage.commands);
   }
   componentWillUnmount() {
     d3.select('#d3container>svg').remove();
@@ -133,7 +230,7 @@ class Mindmap extends React.Component {
     from: (commands) => {
       commands.slice(this.dataManager.commandIndex).every((command) => {
         this.dataManager.commandIndex += 1;
-        const [path, query = ''] = command.content.split('?');
+        const [path, query] = parseCommand(command.content);
         const handler = ({
           '/node/add': (data) => {
             if (!data.name || !data.path) {
@@ -158,16 +255,8 @@ class Mindmap extends React.Component {
           },
         })[path];
         if (handler) {
-          const data = {};
-          query.split('&').forEach((kv) => {
-            if (!kv) {
-              return;
-            }
-            const [k, v] = kv.split('=');
-            data[k] = v;
-          });
           try {
-            handler(data);
+            handler(query);
           } catch (error) {
             if (commands.length - this.dataManager.commandIndex < 6) {
               Message.error(`${error.message}, from ${command.sender.name} [${command.send_time}]`, 3);
@@ -251,7 +340,9 @@ class Mindmap extends React.Component {
             [d.y, d.x],
             d.data,
           );
-        });
+        })
+        .on('mouseenter', d => helper.updateMyPosition([d.y, d.x], d.data))
+        .on('mouseleave', d => helper.updateMyPosition(null, d.data));
       nodeEnter.append('circle')
         .attr('class', 'node')
         .attr('r', 1e-6)
@@ -341,6 +432,7 @@ class Mindmap extends React.Component {
         `
       } />
       <div id="contextMenu"></div>
+      <div id="helperPanel"></div>
     </div>);
   }
 }
