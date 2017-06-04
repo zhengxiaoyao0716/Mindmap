@@ -5,7 +5,7 @@ import {
 } from 'antd';
 const FormItem = Form.Item;
 
-import { login, getVerifyCode, resetPasseord } from './../services/user';
+import { login, getVerifyCode, resetPassword } from './../services/user';
 import localStorage from './../utils/storage';
 
 /* eslint-disable react/no-multi-comp */
@@ -29,7 +29,10 @@ class Signup extends React.Component {
           return d;
         })
         .then(this.props.onSubmit)
-        .catch(this.props.onError);
+        .catch((err) => {
+          this.setState({ submitButton: { loading: false } });
+          this.props.onError(err);
+        });
     });
   }
   render() {
@@ -106,13 +109,16 @@ class Verify extends React.Component {
         return;
       }
       this.setState({ submitButton: { loading: true } });
-      resetPasseord(code, password)
+      resetPassword(code, password)
         .then((d) => {
           this.setState({ submitButton: { disabled: true } });
           return d;
         })
         .then(this.props.onSubmit)
-        .catch(this.props.onError);
+        .catch((err) => {
+          this.setState({ submitButton: { loading: false } });
+          this.props.onError(err);
+        });
     });
   }
 
@@ -185,7 +191,10 @@ class Signin extends React.Component {
           return data;
         })
         .then(this.props.onSubmit)
-        .catch(this.props.onError);
+        .catch((err) => {
+          this.setState({ submitButton: { loading: false } });
+          this.props.onError(err);
+        });
     });
   }
   findPassword = () => {
@@ -226,7 +235,7 @@ class Signin extends React.Component {
         </FormItem>
         <FormItem>
           {getFieldDecorator('password', {
-            rules: [{ required: true, message: '请输入密码' }],
+            rules: [{ min: 6, max: 20, message: '密码长度应为6~20位' }, { required: true, message: '请设置登录密码' }],
           })(
             <Input prefix={<Icon type="lock" style={{ fontSize: 13 }} />} type="password" placeholder="密码" />,
           )}

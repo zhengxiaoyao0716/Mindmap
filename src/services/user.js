@@ -12,13 +12,11 @@ export async function login(account, password) {
 }
 
 export async function getVerifyCode(email, account) {
-  // TODO 后端支持
-  return request(Api.getVerifyCode, { email, account }).catch(e => e);
+  return request(Api.getVerifyCode, { email, account });
 }
 
-export async function resetPasseord(code, password) {
-  // TODO 后端支持
-  return request(Api.resetPassword, { code, password }).catch(e => e);
+export async function resetPassword(code, password) {
+  return request(Api.resetPassword, { code, password });
 }
 
 export async function logout() {
