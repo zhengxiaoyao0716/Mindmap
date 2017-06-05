@@ -1,0 +1,61 @@
+<!-- 思维导图在线协作 -->
+<!-- @author: zhengxiaoyao0716 -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="Keywords" content="" />
+    <meta name="Description" content="" />
+    <link rel="shortcut icon" href="http://os.zheng0716.com/static/image/favicon.ico" />
+    <title>思维导图在线协作</title>
+</head>
+
+<body>
+    <div style="background: #03A9F4; width: 100%; margin-top: 150px; color: white; font-size: 120px; text-align: center; font-family: arial,tahoma,'Microsoft Yahei','\5b8b\4f53',sans-serif;">Hello world</div>
+    <script src="https://cdn.bootcss.com/socket.io/1.7.3/socket.io.min.js"></script>
+    <script>
+        {
+            function fetchJson(url, data = undefined) {
+                return fetch('/Mindmap' + url, {
+                    method: data ? 'POST' : 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': data ? 'application/json; charset="UTF-8"' : 'application/x-www-form-urlencoded',
+                    },
+                    body: data && JSON.stringify(data),
+                    credentials: 'include',
+                }).then(
+                    r => r.status >= 200 && r.status < 300 ? Promise.resolve(r.json()) : Promise.reject((r.statusText, r.text()))
+                    ).catch(console.error);
+            }
+            fetchJson('/guide/user/login', { 'account': 'zhengxiaoyao0716', 'password': '18101301995', }).then(d => JSON.stringify(d)).then(console.log)
+                // 登录
+                .then(() => fetchJson('/user/user/search?keyword=18101301995')).then(d => JSON.stringify(d)).then(console.log)
+                // 项目
+                .then(() =>
+                    fetchJson(
+                        '/user/project/create', { 'name': 'Test' }
+                    ).then(d => d.body).then(project => {
+                        console.log(project);
+                        return fetchJson('/user/project/invitation/generate?project_id=' + project.id);
+                    }).then(d => d.body).then(invitation => {
+                        console.log(invitation);
+                        return fetchJson('/user/project/join', { 'invitation': invitation });
+                    }).then(d => JSON.stringify(d)).then(console.log).catch(console.error)
+                )
+                // 长链接
+                .then(() => {
+                    const socket = io.connect('/Mindmap/socket/project', { 'path': '/Mindmap/socket.io' });
+                    socket.on('join', (data) => console.info(`${data.who.name}加入了项目`, data));
+                    socket.on('send', (data) => console.info(`${data.sender.name}说：${data.content}`, data));
+                    socket.on('leave', (data) => console.info(`${data.who.name}离开了项目`, data));
+                    socket.emit('join', { 'project_id': 1 }, console.log);
+                    socket.emit('send', 'Test message', console.log);
+                    socket.emit('leave', {}, console.log);
+                });
+        }
+    </script>
+</body>
+
+</html>

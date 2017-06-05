@@ -1,0 +1,7 @@
+{
+	"version": "0.1.0",
+    "command": ".env\\Scripts\\python",
+    "isShellCommand": true,
+    "args": ["script/test.py"],
+	"showOutput": "always"
+}
