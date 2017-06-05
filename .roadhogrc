@@ -10,7 +10,8 @@
     },
     "production": {
       "extraBabelPlugins": [
-        "transform-runtime"
+        "transform-runtime",
+        ["import", { "libraryName": "antd", "style": "css" }]
       ]
     }
   },
@@ -21,6 +22,5 @@
       "changeOrigin": true,
       "pathRewrite": { "^/Mindmap" : "" }
     }
-  },
-  "theme": "./theme.js"
+  }
 }
