@@ -176,7 +176,7 @@ export const helper = (() => {
       }
       helper.dispatchMyPosition(xy, data);
     },
-    onCommand: (who, what, when) => {
+    onCommand: (who, what, when) => {    // eslint-disable-line no-unused-vars
       const [path, data] = parseCommand(what);
       const handler = ({
         './cursor/update': () => helper.updateUserCursor(
@@ -222,11 +222,11 @@ class Mindmap extends React.Component {
       <div>
         <Popover content={<div>
           <input ref={(input) => {
-            input.value = contextMenu.inputValue;
+            input.value = contextMenu.inputValue;  // eslint-disable-line no-param-reassign
             input.focus();
             contextMenu.input = input;
 
-            input.onkeypress = (e) => {
+            input.onkeypress = (e) => {  // eslint-disable-line no-param-reassign
               if (e.keyCode !== 13) {
                 return;
               }
@@ -334,7 +334,7 @@ class Mindmap extends React.Component {
     from: (commands) => {
       let commandIndex = this.dataManager.commandIndex;
       const newCommands = commands.slice(commandIndex)
-        .sort((l, r) => l.send_time > r.send_time);
+        .sort((l, r) => (l.send_time > r.send_time ? 1 : l.send_time === r.send_time ? 0 : -1));
       if (!newCommands.length) {
         return;
       }
@@ -430,6 +430,14 @@ class Mindmap extends React.Component {
       }
       toNode.children.push(node);
       node.path = to;
+      const stack = [node];
+      while (stack.length) {
+        const child = stack.pop();
+        child.children && child.children.forEach((n) => {
+          n.path = `${child.path}.${child.id}`;  // eslint-disable-line no-param-reassign
+          stack.push(n);
+        });
+      }
       fromNode.children = fromNode.children.filter(data => data.id !== name);
 
       this.dataManager.update();
