@@ -427,6 +427,7 @@ class Mindmap extends React.Component {
         throw new Error('兄弟节点id冲突');
       }
       toNode.children.push(node);
+      node.path = to;
       fromNode.children = fromNode.children.filter(data => data.id !== name);
 
       this.dataManager.update();
