@@ -81,10 +81,12 @@ export const helper = (() => {
         Modal.confirm({
           title: '移动节点',
           content: `确定要将节点 ${d.data.name || d.data.id} 移动到 ${onDrag.collide.data.name || onDrag.collide.data.id} ？`,
-          onOk: () => dispatch({
-            type: 'projectMessage/send',
-            payload: `/node/move?name=${d.data.id}&from=${d.data.path}&to=${onDrag.collide.data.path}.${onDrag.collide.data.id}`,
-          }),
+          onOk: () => {
+            dispatch({
+              type: 'projectMessage/send',
+              payload: `/node/move?name=${d.data.id}&from=${d.data.path}&to=${onDrag.collide.data.path}.${onDrag.collide.data.id}`,
+            });
+          },
         });
       }
     }
